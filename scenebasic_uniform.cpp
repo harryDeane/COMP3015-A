@@ -22,15 +22,15 @@ using std::endl;
 
 
 SceneBasic_Uniform::SceneBasic_Uniform() :
-    tPrev(0), angle(0.0f),rotSpeed(glm::pi<float>()/8.0f){
-      ogre = ObjMesh::load("media/bs_ears.obj", false, true);
+    tPrev(0), angle(90.0f),rotSpeed(glm::pi<float>()/8.0f),sky(100.0f){
+      //ogre = ObjMesh::load("media/bs_ears.obj", false, true);
 }
 
 void SceneBasic_Uniform::initScene()
 {
     compile();
     glEnable(GL_DEPTH_TEST);
-    model = mat4(1.0f);
+
 
     //rotate the model around the z axis
     //model = glm::rotate(model, glm::radians(-35.0f), vec3(1.0f, 0.0f, 0.0f));
@@ -38,7 +38,7 @@ void SceneBasic_Uniform::initScene()
 
     projection = mat4(1.0f);
 
-    angle = 0.0f;
+  
 
    /* float x, z;
     for (int i = 0; i < 3; i++) {
@@ -58,21 +58,18 @@ void SceneBasic_Uniform::initScene()
     prog.setUniform("lights[1].La", vec3(0.0f, 0.2f, 0.0f));
     prog.setUniform("lights[2].La", vec3(0.2f, 0.0f, 0.0f));
     */
-    prog.setUniform("Light.L", vec3(1.0f));
-    prog.setUniform("Light.La", vec3(0.05f));
+  
     /*
     prog.setUniform("Fog.MaxDist", 20.0f);
     prog.setUniform("Fog.MinDist", 1.0f);
     prog.setUniform("Fog.Color", vec3(0.5f,0.5f,0.5f));
     */
-    GLuint diffTex = Texture::loadTexture("media/texture/ogre_diffuse.png");
-    GLuint normalTex = Texture::loadTexture("media/texture/ogre_normalmap.png");
+    GLuint cubeTex = Texture::loadHdrCubeMap("media/texture/cube/pisa-hdr/pisa");
+    
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, diffTex);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubeTex);
 
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, normalTex);
 }
 
 void SceneBasic_Uniform::compile()
@@ -94,10 +91,9 @@ void SceneBasic_Uniform::update(float t)
 
     if (tPrev == 0.0f) deltaT = 0.0f;
     tPrev = t;
-    angle += 0.1f * deltaT;
-    if (this->m_animate) {
-        angle += rotSpeed * deltaT;
-        if (angle > glm::two_pi<float>())angle -= glm::two_pi<float>();
+    angle += rotSpeed * deltaT;
+    if (angle>glm::two_pi<float>()) {
+        angle -= glm::two_pi<float>();
 
     }
 }
@@ -106,22 +102,12 @@ void SceneBasic_Uniform::render()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    vec3 cameraPos = vec3(-1.0f, 0.25f, 2.0f);
+    vec3 cameraPos = vec3(7.0f*cos(angle), 2.0f, 7.0f*sin(angle));
     view = glm::lookAt(cameraPos, vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
-    prog.setUniform("Light.Position", view*glm::vec4(10.0f*cos(angle), 1.0f, 10.0f*sin(angle), 1.0f));
-
-    prog.setUniform("Material.Kd", vec3(0.2f, 0.55f, 0.9f));
-    prog.setUniform("Material.Ks", vec3(0.95f, 0.95f, 0.95f));
-    prog.setUniform("Material.Ka", vec3(0.2f*0.3f, 0.55f*0.3f, 0.9f*0.3f));
-    prog.setUniform("Material.Shininess", 100.0f);
-
-   
+    prog.use();
     model = mat4(1.0f);
-   
     setMatrices();
-
-    ogre->render();
-    
+    sky.render();
 }
 
 void SceneBasic_Uniform::resize(int w, int h)
