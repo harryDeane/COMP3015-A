@@ -22,7 +22,7 @@ class SceneBasic_Uniform : public Scene
 private:
 
    // Plane plane;
-   //Teapot teapot;
+   Teapot teapot;
    // Cube cube;
     SkyBox sky;
    //std::unique_ptr<ObjMesh> ogre;
@@ -30,12 +30,12 @@ private:
     float tPrev;
     float angle;
    // GLuint vaoHandle; 
-    GLSLProgram prog;
+    GLSLProgram prog, skyProg;
 
    // glm::mat4 rotationMatrix;
 
     //Torus torus;
-    void setMatrices();
+    void setMatrices(GLSLProgram &p);
 
     void compile();
 

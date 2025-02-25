@@ -22,7 +22,7 @@ using std::endl;
 
 
 SceneBasic_Uniform::SceneBasic_Uniform() :
-    tPrev(0), angle(90.0f),rotSpeed(glm::pi<float>()/8.0f),sky(100.0f){
+    tPrev(0), angle(90.0f),rotSpeed(glm::pi<float>()/8.0f),sky(100.0f), teapot(14,glm::mat4(1.0f)){
       //ogre = ObjMesh::load("media/bs_ears.obj", false, true);
 }
 
@@ -69,6 +69,8 @@ void SceneBasic_Uniform::initScene()
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubeTex);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubeTex);
 
 }
 
@@ -77,6 +79,9 @@ void SceneBasic_Uniform::compile()
 	try {
 		prog.compileShader("shader/basic_uniform.vert");
 		prog.compileShader("shader/basic_uniform.frag");
+        skyProg.compileShader("shader/skybox.vert");
+        skyProg.compileShader("shader/skybox.frag");
+        skyProg.link();
 		prog.link();
 		prog.use();
 	} catch (GLSLProgramException &e) {
@@ -104,10 +109,21 @@ void SceneBasic_Uniform::render()
 
     vec3 cameraPos = vec3(7.0f*cos(angle), 2.0f, 7.0f*sin(angle));
     view = glm::lookAt(cameraPos, vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
-    prog.use();
+    skyProg.use();
     model = mat4(1.0f);
-    setMatrices();
+    setMatrices(skyProg);
     sky.render();
+
+    prog.use();
+    prog.setUniform("WorldCameraPosition", cameraPos);
+    prog.setUniform("MaterialColor", glm::vec4(0.5f,0.5f,0.5f,0.5f));
+    prog.setUniform("ReflectFactor", 0.85f);
+
+    model = mat4(1.0f);
+    model = glm::translate(model, vec3(0.0f, -1.0f, 0.0f));
+    model = glm::rotate(model, glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
+    setMatrices(prog);
+    teapot.render();
 }
 
 void SceneBasic_Uniform::resize(int w, int h)
@@ -119,11 +135,11 @@ void SceneBasic_Uniform::resize(int w, int h)
     projection = glm::perspective(glm::radians(70.0f), (float)w / h, 0.3f, 100.0f);
 }
 
-void SceneBasic_Uniform::setMatrices()
+void SceneBasic_Uniform::setMatrices(GLSLProgram &p)
 {
     mat4 mv = view*model;
 
-    prog.setUniform("ModelViewMatrix", mv);
-    prog.setUniform("NormalMatrix", glm::mat3(vec3(mv[01]), vec3(mv[1]), vec3(mv[2])));
-    prog.setUniform("MVP",projection* mv);
+    p.setUniform("ModelMatrix", model);
+    //prog.setUniform("NormalMatrix", glm::mat3(vec3(mv[01]), vec3(mv[1]), vec3(mv[2])));
+    p.setUniform("MVP",projection* mv);
 }
