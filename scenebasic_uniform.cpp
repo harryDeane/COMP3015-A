@@ -22,48 +22,15 @@ using std::endl;
 
 
 SceneBasic_Uniform::SceneBasic_Uniform() :
-    tPrev(0), angle(90.0f),rotSpeed(glm::pi<float>()/8.0f),sky(100.0f), teapot(14,glm::mat4(1.0f)){
-      //ogre = ObjMesh::load("media/bs_ears.obj", false, true);
+    tPrev(0), angle(90.0f),rotSpeed(glm::pi<float>()/30.0f),sky(100.0f), time(1.0f) {
+      ogre = ObjMesh::load("media/rock.obj", false, true);
 }
 
 void SceneBasic_Uniform::initScene()
 {
     compile();
     glEnable(GL_DEPTH_TEST);
-
-
-    //rotate the model around the z axis
-    //model = glm::rotate(model, glm::radians(-35.0f), vec3(1.0f, 0.0f, 0.0f));
-    //model = glm::rotate(model, glm::radians(15.0f), vec3(0.0f, 1.0f, 0.0f));
-
     projection = mat4(1.0f);
-
-  
-
-   /* float x, z;
-    for (int i = 0; i < 3; i++) {
-        std::stringstream name;
-        name << "lights[" << i << "].Position";
-        x = 2.0f * cosf((glm::two_pi<float>() / 3) * i);
-        z = 2.0f * sinf((glm::two_pi<float>() / 3) * i);
-        prog.setUniform(name.str().c_str(), view * glm::vec4(x, 1.2f, z + 1.0f, 1.0f));
-    }
-  
-    prog.setUniform("lights[0].L", vec3(0.0f,0.0f,0.8f));
-    
-    prog.setUniform("lights[1].L", vec3(0.0f, 0.8f, 0.0f));
-    prog.setUniform("lights[2].L", vec3(0.8f, 0.0f, 0.0f));
-   
-    prog.setUniform("lights[0].La", vec3(0.0f, 0.0f, 0.2f));
-    prog.setUniform("lights[1].La", vec3(0.0f, 0.2f, 0.0f));
-    prog.setUniform("lights[2].La", vec3(0.2f, 0.0f, 0.0f));
-    */
-  
-    /*
-    prog.setUniform("Fog.MaxDist", 20.0f);
-    prog.setUniform("Fog.MinDist", 1.0f);
-    prog.setUniform("Fog.Color", vec3(0.5f,0.5f,0.5f));
-    */
     GLuint cubeTex = Texture::loadHdrCubeMap("media/texture/cube/pisa-hdr/pisa");
     
 
@@ -72,18 +39,29 @@ void SceneBasic_Uniform::initScene()
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubeTex);
 
+    // Load textures
+    GLuint mossTexture = Texture::loadTexture("media/texture/brick1.jpg");
+    GLuint brickTexture = Texture::loadTexture("media/texture/moss.png");
+
+ // Bind textures to texture units
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, mossTexture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, brickTexture);
+
 }
 
 void SceneBasic_Uniform::compile()
 {
 	try {
-		prog.compileShader("shader/basic_uniform.vert");
-		prog.compileShader("shader/basic_uniform.frag");
+		
         skyProg.compileShader("shader/skybox.vert");
         skyProg.compileShader("shader/skybox.frag");
+        modelProg.compileShader("shader/model.vert");
+        modelProg.compileShader("shader/model.frag");
+        modelProg.link();
         skyProg.link();
-		prog.link();
-		prog.use();
+        modelProg.use();
 	} catch (GLSLProgramException &e) {
 		cerr << e.what() << endl;
 		exit(EXIT_FAILURE);
@@ -101,6 +79,8 @@ void SceneBasic_Uniform::update(float t)
         angle -= glm::two_pi<float>();
 
     }
+    // Update the time variable
+    time += deltaT;
 }
 
 void SceneBasic_Uniform::render()
@@ -113,17 +93,45 @@ void SceneBasic_Uniform::render()
     model = mat4(1.0f);
     setMatrices(skyProg);
     sky.render();
+    modelProg.use();
+    modelProg.setUniform("textureMoss", 0); // Texture unit 0
+    modelProg.setUniform("textureBrick", 1); // Texture unit 1
 
-    prog.use();
-    prog.setUniform("WorldCameraPosition", cameraPos);
-    prog.setUniform("MaterialColor", glm::vec4(0.5f,0.5f,0.5f,0.5f));
-    prog.setUniform("ReflectFactor", 0.85f);
+    #define MAX_LIGHTS 3
+    // Define multiple lights with slight movement using the time variable
+    vec3 lightPositions[MAX_LIGHTS] = {
+        vec3(5.0f * cos(time * 0.5f), 5.0f, 5.0f * sin(time * 0.5f)), // Light 1: Circular motion
+        vec3(-5.0f, 5.0f + 2.0f * sin(time * 0.3f), -5.0f), // Light 2: Vertical oscillation
+        vec3(0.0f, 10.0f, 0.0f + 3.0f * cos(time * 0.4f)) // Light 3: Horizontal oscillation
+    };
+
+    vec3 lightDirections[MAX_LIGHTS] = {
+        vec3(0.0f, -1.0f, 0.0f),
+        vec3(0.0f, -1.0f, 0.0f),
+        vec3(0.0f, -1.0f, 0.0f)
+    };
+
+    // Set light positions and directions
+    for (int i = 0; i < MAX_LIGHTS; i++) {
+        std::string lightName = "Lights[" + std::to_string(i) + "]";
+        modelProg.setUniform((lightName + ".Position").c_str(), vec4(lightPositions[i], 1.0f));
+        modelProg.setUniform((lightName + ".La").c_str(), vec3(0.1f)); // Ambient light intensity
+        modelProg.setUniform((lightName + ".L").c_str(), vec3(1.0f)); // Diffuse and specular light intensity
+        modelProg.setUniform((lightName + ".Direction").c_str(), lightDirections[i]);
+        modelProg.setUniform((lightName + ".Cutoff").c_str(), glm::radians(30.0f)); // Spotlight cutoff angle
+    }
+
+    // Set material uniforms
+    modelProg.setUniform("Material.Kd", vec3(0.8f)); // Diffuse reflectivity
+    modelProg.setUniform("Material.Ka", vec3(0.2f)); // Ambient reflectivity
+    modelProg.setUniform("Material.Ks", vec3(0.5f)); // Specular reflectivity
+    modelProg.setUniform("Material.Shininess", 32.0f); // Specular shininess
 
     model = mat4(1.0f);
-    model = glm::translate(model, vec3(0.0f, -1.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
-    setMatrices(prog);
-    teapot.render();
+    model = glm::translate(model, vec3(2.0f, -2.0f, 0.0f)); // Example position
+    model = glm::scale(model, vec3(0.1f)); // Example scale
+    setMatrices(modelProg);
+    ogre->render();
 }
 
 void SceneBasic_Uniform::resize(int w, int h)
@@ -140,6 +148,8 @@ void SceneBasic_Uniform::setMatrices(GLSLProgram &p)
     mat4 mv = view*model;
 
     p.setUniform("ModelMatrix", model);
+    p.setUniform("ViewMatrix", view);
+    p.setUniform("ProjectionMatrix", projection);
     //prog.setUniform("NormalMatrix", glm::mat3(vec3(mv[01]), vec3(mv[1]), vec3(mv[2])));
     p.setUniform("MVP",projection* mv);
 }

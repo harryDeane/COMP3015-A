@@ -21,16 +21,17 @@ class SceneBasic_Uniform : public Scene
 {
 private:
 
-   // Plane plane;
-   Teapot teapot;
+    //Plane plane;
+   //Teapot teapot;
    // Cube cube;
     SkyBox sky;
-   //std::unique_ptr<ObjMesh> ogre;
+   std::unique_ptr<ObjMesh> ogre;
    float rotSpeed;
     float tPrev;
     float angle;
+    float time;
    // GLuint vaoHandle; 
-    GLSLProgram prog, skyProg;
+    GLSLProgram prog, skyProg, modelProg;
 
    // glm::mat4 rotationMatrix;
 
