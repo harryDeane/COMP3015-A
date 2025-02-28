@@ -11,6 +11,8 @@ layout(binding = 1) uniform sampler2D NormalMapTex; // Normal map texture
 
 layout(location = 0) out vec4 FragColor;
 
+uniform bool IsPlane; // New uniform to check if this is the plane
+
 // Light and material uniforms
 uniform struct LightInfo {
     vec4 Position;   // Light position
@@ -27,12 +29,27 @@ uniform struct MaterialInfo {
     float Shininess;    // Specular shininess factor
 } Material;
 
+uniform struct FogInfo {
+    vec3 Color;     // Fog color
+    float MinDist;  // Minimum distance for fog to start
+    float MaxDist;  // Maximum distance for fog to fully cover
+} Fog;
+
 // Blinn-Phong lighting calculation for a single light
 vec3 blinnPhong(vec3 n, LightInfo light, vec3 lightDir) {
     vec3 diffuse = vec3(0), spec = vec3(0);
 
     // Sample the color texture
-    vec3 texColor = texture(ColorTex, TexCoord).rgb;
+    vec3 texColor;
+    if (IsPlane) {
+        vec4 Tex1 = texture(ColorTex, TexCoord);
+        vec4 Tex2 = texture(NormalMapTex, TexCoord);
+        // Use the plane's color instead of sampling textures
+        texColor = mix(Tex1.rgb, Tex2.rgb, Tex2.a);
+    } 
+    else {
+    texColor = texture(ColorTex, TexCoord).rgb;
+    }
 
     // Ambient component
     vec3 ambient = light.La * texColor;
@@ -60,6 +77,11 @@ vec3 blinnPhong(vec3 n, LightInfo light, vec3 lightDir) {
     return ambient + (diffuse + spec) * light.L;
 }
 
+// Calculate fog factor
+float fogFactor(float dist) {
+    return clamp((Fog.MaxDist - dist) / (Fog.MaxDist - Fog.MinDist), 0.0, 1.0);
+}
+
 void main() {
     // Sample the normal map and transform to tangent space
     vec3 norm = texture(NormalMapTex, TexCoord).xyz;
@@ -76,6 +98,15 @@ void main() {
         finalColor += blinnPhong(norm, Lights[i], LightDir[i]);
     }
 
+    // Calculate the distance from the camera to the fragment
+    float dist = length(ViewDir);
+
+    // Calculate the fog factor
+    float fogFactor = fogFactor(dist);
+
+    // Blend the final color with the fog color
+    finalColor = mix(Fog.Color, finalColor, fogFactor);
+
     // Output the final color
     FragColor = vec4(finalColor, 1.0);
-}
+ }

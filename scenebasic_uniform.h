@@ -22,7 +22,7 @@ class SceneBasic_Uniform : public Scene
 {
 private:
     KeyboardController keyboardController;
-    //Plane plane;
+    Plane plane;
    //Teapot teapot;
    // Cube cube;
     SkyBox sky;

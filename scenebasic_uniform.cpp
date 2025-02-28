@@ -22,7 +22,7 @@ using std::endl;
 
 
 SceneBasic_Uniform::SceneBasic_Uniform() :
-      tPrev(0), angle(90.0f), rotSpeed(0.0f), sky(100.0f), time(0.01f) {
+      tPrev(0), angle(90.0f), rotSpeed(0.0f), sky(100.0f), time(0.01f), plane(50.0f,50.0f,50.0f, 50.0f) {
       ogre = ObjMesh::load("media/rocknew.obj", false, true);
 }
 
@@ -39,6 +39,12 @@ void SceneBasic_Uniform::initScene()
     compile();
     glEnable(GL_DEPTH_TEST);
     projection = mat4(1.0f);
+
+    modelProg.use();
+    modelProg.setUniform("Fog.Color", vec3(0.5f, 0.5f, 0.5f)); // Gray fog color
+    modelProg.setUniform("Fog.MinDist", 1.0f); // Fog starts at 10 units
+    modelProg.setUniform("Fog.MaxDist", 20.0f); // Fog fully covers at 50 units
+
     GLuint cubeTex = Texture::loadHdrCubeMap("media/texture/cube/pisa-hdr/tex");
     
 
@@ -71,8 +77,11 @@ void SceneBasic_Uniform::compile()
         skyProg.compileShader("shader/skybox.frag");
         modelProg.compileShader("shader/model.vert");
         modelProg.compileShader("shader/model.frag");
+        prog.compileShader("shader/basic_uniform.vert");
+        prog.compileShader("shader/basic_uniform.frag");
         modelProg.link();
         skyProg.link();
+        prog.link();
         
 	} catch (GLSLProgramException &e) {
 		cerr << e.what() << endl;
@@ -113,6 +122,14 @@ void SceneBasic_Uniform::render()
     sky.render();
 
     modelProg.use();
+    modelProg.setUniform("IsPlane", true); // Indicate that this is the plane
+    model = mat4(1.0f);
+    model = glm::translate(model, vec3(0.0f, -5.0f, 0.0f)); // Position the plane underneath the model
+    setMatrices(modelProg);
+    plane.render();
+
+    modelProg.use();
+    modelProg.setUniform("IsPlane", false); // Indicate that this is not the plane
     modelProg.setUniform("textureMoss", 0); // Texture unit 0
     modelProg.setUniform("textureBrick", 1); // Texture unit 1
 

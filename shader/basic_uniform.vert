@@ -1,33 +1,27 @@
 #version 460
 
-layout(location = 0) in vec3 aPos;       // Vertex position
-layout(location = 1) in vec3 aNormal;    // Vertex normal
-layout(location = 2) in vec2 aTexCoord;  // Texture coordinates
+layout (location = 0) in vec3 VertexPosition;
+layout (location = 1) in vec3 VertexNormal;
+layout (location = 2) in vec2 VertexTexCoord;
 
-uniform mat4 ModelMatrix;
-uniform mat4 ViewMatrix;
-uniform mat4 ProjectionMatrix;
+out vec3 Position;
+out vec3 Normal;
+out vec2 TexCoord;
 
-uniform vec3 LightPosition; // Light position in world space
+uniform mat4 ModelViewMatrix;
+uniform mat3 NormalMatrix;
+uniform mat4 MVP;
 
-out vec3 LightDir;  // Light direction in tangent space
-out vec3 ViewDir;   // View direction in tangent space
-out vec2 TexCoord;  // Texture coordinates
+void getCamSpaceValues(out vec3 norm, out vec3 position) {
+    norm=normalize(NormalMatrix*VertexNormal);
+    position=(ModelViewMatrix*vec4(VertexPosition, 1.0)).xyz;
+}
 
 void main()
 {
-    // Transform vertex position to world space
-    vec3 FragPos = vec3(ModelMatrix * vec4(aPos, 1.0));
+    TexCoord = VertexTexCoord;
+    Normal = normalize(NormalMatrix*VertexNormal);
+    Position = (ModelViewMatrix*vec4(VertexPosition,1.0)).xyz;
 
-    // Calculate light direction in world space
-    LightDir = LightPosition - FragPos;
-
-    // Calculate view direction in world space
-    ViewDir = vec3(inverse(ViewMatrix) * vec4(0.0, 0.0, 1.0, 1.0)) - FragPos;
-
-    // Pass texture coordinates
-    TexCoord = aTexCoord;
-
-    // Final vertex position
-    gl_Position = ProjectionMatrix * ViewMatrix * ModelMatrix * vec4(aPos, 1.0);
+    gl_Position = MVP*vec4(VertexPosition,1.0);
 }
