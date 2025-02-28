@@ -39,6 +39,7 @@ public:
       Called when screen is resized
       */
     virtual void resize(int, int) = 0;
+
     
     void animate( bool value ) { m_animate = value; }
     bool animating() { return m_animate; }

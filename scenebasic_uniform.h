@@ -16,11 +16,12 @@
 #include "helper/cube.h"
 
 #include "helper/skybox.h"
+#include "KeyboardController.h"
 
 class SceneBasic_Uniform : public Scene
 {
 private:
-
+    KeyboardController keyboardController;
     //Plane plane;
    //Teapot teapot;
    // Cube cube;
@@ -30,6 +31,10 @@ private:
     float tPrev;
     float angle;
     float time;
+  
+    glm::vec3 cameraPos; // Correct declaration of cameraPos
+    glm::vec3 cameraUp;
+    glm::vec3 cameraFront;
    // GLuint vaoHandle; 
     GLSLProgram prog, skyProg, modelProg;
 
@@ -40,6 +45,7 @@ private:
 
     void compile();
 
+
 public:
     SceneBasic_Uniform();
 
@@ -47,6 +53,8 @@ public:
     void update( float t );
     void render();
     void resize(int, int);
+
+    static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
 };
 
 #endif // SCENEBASIC_UNIFORM_H

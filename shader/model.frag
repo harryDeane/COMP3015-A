@@ -12,7 +12,6 @@ layout(binding = 1) uniform sampler2D NormalMapTex; // Normal map texture
 layout(location = 0) out vec4 FragColor;
 
 // Light and material uniforms
-#define MAX_LIGHTS 3
 uniform struct LightInfo {
     vec4 Position;   // Light position
     vec3 La;        // Ambient light intensity

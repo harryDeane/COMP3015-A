@@ -1,14 +1,16 @@
 #version 460
 
+#define MAX_LIGHTS 3
+
 layout(location = 0) in vec3 aPos;       // Vertex position
 layout(location = 1) in vec3 aNormal;    // Vertex normal
 layout(location = 2) in vec2 aTexCoord;  // Texture coordinates
+
 
 uniform mat4 ModelMatrix;
 uniform mat4 ViewMatrix;
 uniform mat4 ProjectionMatrix;
 
-#define MAX_LIGHTS 3
 uniform vec3 LightPosition[MAX_LIGHTS]; // Light positions in world space
 
 out vec3 LightDir[MAX_LIGHTS];  // Light directions in tangent space
