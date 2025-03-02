@@ -45,7 +45,7 @@ void SceneBasic_Uniform::initScene()
     modelProg.setUniform("Fog.MinDist", 1.0f); // Fog starts at 10 units
     modelProg.setUniform("Fog.MaxDist", 20.0f); // Fog fully covers at 50 units
 
-    GLuint cubeTex = Texture::loadHdrCubeMap("media/texture/cube/pisa-hdr/tex");
+    GLuint cubeTex = Texture::loadHdrCubeMap("media/texture/cube/pisa-hdr/sky");
     
 
     glActiveTexture(GL_TEXTURE0);
